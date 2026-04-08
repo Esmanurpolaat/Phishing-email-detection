@@ -1,48 +1,74 @@
-Geliştirme Sunucusunu Çalıştırma
+# Phishing Email Detection System
 
-Öncelikle geliştirme sunucusunu başlatın:
+## Proje Açıklaması
 
+Bu proje, kullanıcıdan alınan e-posta içeriğini analiz ederek phishing (oltalama) içerip içermediğini tespit eden web tabanlı bir uygulamadır. Amaç, kullanıcıların zararlı ve sahte e-postaları erken aşamada fark edebilmesini sağlamaktır.
+
+## Amaç
+
+* Phishing e-postaları tespit etmek
+* Kullanıcı güvenliğini artırmak
+* E-postaları güvenli ve şüpheli olarak sınıflandırmak
+
+## Kullanılan Teknolojiler
+
+### Frontend
+
+* Next.js (React)
+* TypeScript
+* Tailwind CSS
+
+### Backend
+
+* (Varsa burayı kendine göre doldurabilirsin)
+
+## Sistem Nasıl Çalışır
+
+1. Kullanıcı e-posta metnini sisteme girer
+2. Sistem metni analiz eder
+3. Şüpheli ifadeler, linkler ve yapılar kontrol edilir
+4. Sonuç kullanıcıya sunulur
+
+## Kurulum ve Çalıştırma
+
+### 1. Projeyi klonlayın
+
+```bash
+git clone https://github.com/Esmanurpolaat/Phishing-email-detection.git
+```
+
+### 2. Proje klasörüne girin
+
+```bash
+cd phishing-email-detection
+```
+
+### 3. Gerekli paketleri yükleyin
+
+```bash
+npm install
+```
+
+### 4. Geliştirme sunucusunu başlatın
+
+```bash
 npm run dev
+```
 
-yarn dev
-
-pnpm dev
-
-bun dev
-
-Tarayıcınızdan şu adresi açın:
+### 5. Tarayıcıdan açın
 
 http://localhost:3000
 
-Sonucu burada görebilirsiniz.
+## Notlar
 
- Projeyi Düzenleme
+* Uygulama geliştirme aşamasındadır
+* Analiz sonuçları test amaçlıdır
+* Gerçek kullanım için daha gelişmiş model entegrasyonu gereklidir
 
-Sayfayı düzenlemeye başlamak için:
+## Katkı
 
- app/page.tsx dosyasını değiştirin
+Katkıda bulunmak isteyenler pull request gönderebilir.
 
-Dosyada yaptığınız değişiklikler otomatik olarak sayfaya yansır.
+## Lisans
 
- Kullanılan Özellik
-
-Bu proje, next/font kullanarak Vercel’in geliştirdiği yeni font ailesi Geist’i otomatik olarak optimize eder ve yükler.
-
- Daha Fazla Bilgi
-
-Next.js hakkında daha fazla bilgi için:
-
-Next.js Documentation → Next.js özellikleri ve API’leri hakkında bilgi edinmek için
-Learn Next.js → Etkileşimli Next.js eğitimi
-
-Ayrıca GitHub reposuna da göz atabilirsiniz:
- Next.js GitHub repository (geri bildirim ve katkılarınızı paylaşabilirsiniz)
-
-Yayına Alma (Deploy)
-
-Next.js uygulamanızı yayınlamanın en kolay yolu:
-
- Vercel Platformunu kullanmaktır (Next.js’in geliştiricileri tarafından yapılmıştır)
-
-Daha fazla bilgi için:
- Next.js deployment dokümantasyonuna bakabilirsiniz
+Bu proje eğitim amaçlı geliştirilmiştir.
