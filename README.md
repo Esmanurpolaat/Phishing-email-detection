@@ -3,11 +3,11 @@ Geliştirme Sunucusunu Çalıştırma
 Öncelikle geliştirme sunucusunu başlatın:
 
 npm run dev
-# veya
+
 yarn dev
-# veya
+
 pnpm dev
-# veya
+
 bun dev
 
 Tarayıcınızdan şu adresi açın:
