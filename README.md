@@ -1,36 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Geliştirme Sunucusunu Çalıştırma
 
-## Getting Started
+Öncelikle geliştirme sunucusunu başlatın:
 
-First, run the development server:
-
-```bash
 npm run dev
-# or
+# veya
 yarn dev
-# or
+# veya
 pnpm dev
-# or
+# veya
 bun dev
-```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Tarayıcınızdan şu adresi açın:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+http://localhost:3000
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Sonucu burada görebilirsiniz.
 
-## Learn More
+ Projeyi Düzenleme
 
-To learn more about Next.js, take a look at the following resources:
+Sayfayı düzenlemeye başlamak için:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+ app/page.tsx dosyasını değiştirin
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Dosyada yaptığınız değişiklikler otomatik olarak sayfaya yansır.
 
-## Deploy on Vercel
+ Kullanılan Özellik
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Bu proje, next/font kullanarak Vercel’in geliştirdiği yeni font ailesi Geist’i otomatik olarak optimize eder ve yükler.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+ Daha Fazla Bilgi
+
+Next.js hakkında daha fazla bilgi için:
+
+Next.js Documentation → Next.js özellikleri ve API’leri hakkında bilgi edinmek için
+Learn Next.js → Etkileşimli Next.js eğitimi
+
+Ayrıca GitHub reposuna da göz atabilirsiniz:
+ Next.js GitHub repository (geri bildirim ve katkılarınızı paylaşabilirsiniz)
+
+Yayına Alma (Deploy)
+
+Next.js uygulamanızı yayınlamanın en kolay yolu:
+
+ Vercel Platformunu kullanmaktır (Next.js’in geliştiricileri tarafından yapılmıştır)
+
+Daha fazla bilgi için:
+ Next.js deployment dokümantasyonuna bakabilirsiniz
