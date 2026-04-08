@@ -1,81 +1,102 @@
-import os
-import re
 import pandas as pd
+import numpy as np
+import os
+import glob
+import re
 
-print("[INFO] Veri isleme hatti (pipeline) baslatiliyor...")
+print("[INFO] Veri isleme ve birlestirme adimi baslatiliyor...")
 
-# --- 1. DİZİN VE YOL (PATH) AYARLARI ---
-# Kodun calistigi dizini temel alarak proje ana dizinini (BASE_DIR) dinamik olarak belirler.
-# Bu sayede terminalin nerede acik oldugu fark etmeksizin dosyalar dogru bulunur.
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RAW_DIR = os.path.join(BASE_DIR, 'data', 'raw')
 PROCESSED_DIR = os.path.join(BASE_DIR, 'data', 'processed')
-
-# Cikti klasoru mevcut degilse (data/processed) sistem tarafindan otomatik olusturulur.
 os.makedirs(PROCESSED_DIR, exist_ok=True)
 
-# --- 2. HAM (RAW) VERİLERİN YÜKLENMESİ ---
-print("[INFO] Ham veri setleri bellege yukleniyor...")
+all_dataframes = []
 
-# 2.1. TREC_05 Veri Seti (Geleneksel Spam/Phishing mailleri)
-# 'engine=python' parametresi Buffer Overflow hatalarini engellemek icin kullanilmistir.
-df_trec = pd.read_csv(os.path.join(RAW_DIR, 'TREC_05.csv'), on_bad_lines='skip', engine='python')
-df_trec = df_trec[['body', 'label']].rename(columns={'body': 'text'})
+# --- NÜKLEER METIN TEMIZLEME FONKSIYONU ---
+def metinleri_temizle(df, text_col):
+    df = df.rename(columns={text_col: 'text'})
+    
+    # 1. Tum veriyi string yap
+    df['text'] = df['text'].astype(str)
+    
+    # 2. Enter (\n), Tab (\t) ve arka arkaya gelen tum bosluklari tek bir normal bosluga cevir
+    df['text'] = df['text'].replace(r'\s+', ' ', regex=True).str.strip()
+    
+    # 3. 'nan', 'null' gibi yazilari gercek NaN yap ve sil
+    df['text'] = df['text'].replace(['', 'nan', 'null', 'none', 'NaN', 'None', ' '], np.nan)
+    df = df.dropna(subset=['text'])
+    
+    # 4. NÜKLEER FILTRE: İçinde en az 10 tane GERÇEK HARF (a-z, A-Z) olmayan satırları YOK ET!
+    # (Bu sayede icinde sadece "......", "-----", "***" olan anlamsiz satirlar silinecek)
+    df = df[df['text'].str.count(r'[a-zA-Z]') >= 10]
+    
+    return df
 
-# 2.2. EduPhish Veri Seti (Egitim sektorune yonelik Phishing verileri)
-df_edu = pd.read_csv(os.path.join(RAW_DIR, 'EduPhish_Kaggle_Package', 'eduphish_dataset.csv'), on_bad_lines='skip')
-df_edu = df_edu[['text', 'label']]
+print("\n[INFO] --- 1. ASAMA: DOSYALAR OKUNUYOR VE ETIKETLENIYOR ---")
 
-# 2.3. Insan Uretimi (Human-Generated) Phishing Verisi
-df_h_legit = pd.read_csv(os.path.join(RAW_DIR, 'human-generated', 'legit.csv'), on_bad_lines='skip')
-df_h_legit = df_h_legit[['body', 'label']].rename(columns={'body': 'text'})
+# A) ENRON VERI SETINI OKU
+enron_path = os.path.join(RAW_DIR, 'enron_spam_data.csv')
+if os.path.exists(enron_path):
+    print(f"-> Enron dosyasi isleniyor...")
+    df_enron = pd.read_csv(enron_path, on_bad_lines='skip', low_memory=False)
+    text_c = 'Message' if 'Message' in df_enron.columns else 'text'
+    df_enron = metinleri_temizle(df_enron, text_c)
+    
+    if 'Spam/Ham' in df_enron.columns:
+        df_enron = df_enron.rename(columns={'Spam/Ham': 'label'})
+    if 'label' in df_enron.columns:
+        df_enron['label'] = df_enron['label'].astype(str).str.lower().str.strip()
+        sozluk = {'spam': 1, 'phishing': 1, '1': 1, '1.0': 1, 'ham': 0, 'legit': 0, '0': 0, '0.0': 0}
+        df_enron['label'] = df_enron['label'].map(sozluk)
+        df_enron = df_enron.dropna(subset=['label'])
+        df_enron['label'] = df_enron['label'].astype(int)
+        all_dataframes.append(df_enron[['text', 'label']])
 
-df_h_phish = pd.read_csv(os.path.join(RAW_DIR, 'human-generated', 'phishing.csv'), on_bad_lines='skip')
-df_h_phish = df_h_phish[['body', 'label']].rename(columns={'body': 'text'})
+# B) KAGGLE VERI SETLERINI OKU
+for folder_name in ['human-generated', 'llm-generated']:
+    folder_path = os.path.join(RAW_DIR, folder_name)
+    if os.path.exists(folder_path):
+        csv_files = glob.glob(os.path.join(folder_path, '*.csv'))
+        for csv_file in csv_files:
+            dosya_adi = os.path.basename(csv_file).lower()
+            print(f"-> {folder_name} icindeki {dosya_adi} isleniyor...")
+            df_temp = pd.read_csv(csv_file, on_bad_lines='skip', low_memory=False)
+            
+            bulunan_text_col = None
+            for col in df_temp.columns:
+                if str(col).lower() in ['text', 'message', 'email text', 'content', 'mail', 'body']:
+                    bulunan_text_col = col
+                    break
+            
+            if bulunan_text_col:
+                df_temp = metinleri_temizle(df_temp, bulunan_text_col)
+                if 'phishing' in dosya_adi:
+                    df_temp['label'] = 1
+                elif 'legit' in dosya_adi:
+                    df_temp['label'] = 0
+                else:
+                    continue
+                all_dataframes.append(df_temp[['text', 'label']])
 
-# 2.4. LLM Uretimi (Yapay Zeka) Phishing Verisi
-# LLM verilerinde hedef degisken (label) bulunmadigi icin 0 (Legit) ve 1 (Phishing) olarak manuel atanir.
-df_l_legit = pd.read_csv(os.path.join(RAW_DIR, 'llm-generated', 'legit.csv'), on_bad_lines='skip')
-df_l_legit = df_l_legit[['text']]
-df_l_legit['label'] = 0 
-
-df_l_phish = pd.read_csv(os.path.join(RAW_DIR, 'llm-generated', 'phishing.csv'), on_bad_lines='skip')
-df_l_phish = df_l_phish[['text']]
-df_l_phish['label'] = 1 
-
-# --- 3. VERİ BİRLEŞTİRME VE GÜRÜLTÜ AZALTMA ---
-print("[INFO] Veri setleri birlestiriliyor ve kopya kayitlar temizleniyor...")
-df_all = pd.concat([df_trec, df_edu, df_h_legit, df_h_phish, df_l_legit, df_l_phish], ignore_index=True)
-
-initial_count = len(df_all)
-# NaN (bos) degerler ve birebir ayni metne sahip kopyalar (duplikasyon) modelin ezberlemesini (overfitting) onlemek icin silinir.
-df_all = df_all.dropna().drop_duplicates(subset=['text'])
-print(f"[INFO] Birlestirme oncesi satir: {initial_count} | Temizlik sonrasi benzersiz satir: {len(df_all)}")
-
-# --- 4. METİN ÖN İŞLEME (TEXT PREPROCESSING) ---
-def clean_text(text):
-    """
-    Girdi metnini makine ogrenmesi modeline uygun hale getirmek icin temizler.
-    - Kucuk harf donusumu (lowercase) yapar.
-    - HTML etiketlerini ve kalintilarini kaldirir.
-    - URL ve E-posta adreslerini standart yer tutucularla (placeholder) degistirir.
-    - Alfabetik olmayan karakterleri (sayilar, noktalama) siler.
-    """
-    text = str(text).lower() 
-    text = re.sub(r'<[^>]+>', ' ', text)
-    text = re.sub(r'http[s]?://\S+|www\S+', ' urllink ', text) 
-    text = re.sub(r'\S+@\S+', ' emailadres ', text) 
-    text = re.sub(r'[^a-z\s]', ' ', text) 
-    return re.sub(r'\s+', ' ', text).strip() 
-
-print("[INFO] Metin temizleme (regex) islemi uygulaniyor. Lutfen bekleyin...")
-df_all['cleaned_text'] = df_all['text'].apply(clean_text)
-
-# --- 5. NİHAİ VERİ SETİNİN DIŞA AKTARILMASI (EXPORT) ---
-print("[INFO] Islenmis veri CSV formatinda disari aktariliyor...")
-output_path = os.path.join(PROCESSED_DIR, 'combined_dataset.csv')
-
-# Model egitimi icin sadece 'cleaned_text' (bagimsiz degisken) ve 'label' (hedef degisken) sutunlari tutulur.
-df_all[['cleaned_text', 'label']].to_csv(output_path, index=False)
-
-print(f"[BASARILI] Veri isleme hatti tamamlandi. Cikti konumu: {output_path}")
+print("\n[INFO] --- 2. ASAMA: TUM TEMIZ VERILER BIRLESTIRILIYOR ---")
+if len(all_dataframes) > 0:
+    df_combined = pd.concat(all_dataframes, ignore_index=True)
+    baslangic_satir = len(df_combined)
+    
+    # Kopyalari sil
+    df_combined = df_combined.drop_duplicates(subset=['text']).reset_index(drop=True)
+    
+    # Model egitimi icin ekstra sutun
+    df_combined['cleaned_text'] = df_combined['text']
+    
+    # Kaydet
+    output_path = os.path.join(PROCESSED_DIR, 'combined_dataset.csv')
+    df_combined.to_csv(output_path, index=False)
+    
+    silinen_kopya = baslangic_satir - len(df_combined)
+    print(f"-> Birlestirme sonrasi {silinen_kopya} adet kopya ve hayalet satir silindi.")
+    print(f"\n[BASARILI] Gercek harf filtresi uygulandi! Pürüzsüz veri seti hazir.")
+    print(f"[BILGI] Final Net Satir Sayisi: {len(df_combined)}")
+else:
+    print("[HATA] Islenecek veri bulunamadi!")
